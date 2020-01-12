@@ -61,6 +61,5 @@ set_metadata <- function(x, ...) {
   else x
 }
 
-
 globalVariables(c(".", "Date", "type", "region", "key","type","value", "n",
                   "...1"))

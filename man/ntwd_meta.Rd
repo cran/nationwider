@@ -9,6 +9,9 @@ ntwd_meta(x)
 \arguments{
 \item{x}{The object that is returned from \code{\link{ntwd_get}}.}
 }
+\value{
+A chracter vector.
+}
 \description{
 Some datasets in nationwide contain metadata that cannot be displayed in
 a dataframe. All metadata are stored as attributes to the dataframe, where it

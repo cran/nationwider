@@ -5,7 +5,7 @@ has_date <- function(x) {
 }
 
 has_proper_names <- function(x) {
-  all(names(x)[-1] %in% c("region", "type", "key", "value"))
+  all(names(x)[-1] %in% c("region", "type", "house_type", "value"))
 }
 
 is_tidy <- function(x) {

@@ -1,7 +1,7 @@
 
 # 5,7-16 same format ------------------------------------------------------
 
-ntwd_get_id <- function(id) {
+ntwd_get_id <- function(id, .verbose) {
   if (missing(id)) {
     stop("You must specify a `id`, see ?nwtd_dataset", call. = FALSE)
   }
@@ -10,23 +10,23 @@ ntwd_get_id <- function(id) {
       "regional", "seasonal_regional",
       "new_prop", "mod_prop", "old_prop", "not_new_prop",
       "first","fowner",
-      "terraced", "flats", "detached",
+      "terraced", "flats", "semi_det", "detached",
       "aftb_ind", "aftb_hper")
 
   if (!(id %in% id_categories)) {
     stop("`id` is not valid, see ?ntwd_dataset.", call. = FALSE)
   }
   switch(id,
-     monthly = ntwd_get_monthly(),
-     quarterly = ntwd_get_quarterly(),
-     since_1952 = ntwd_get_since_1952(),
-     inflation_adjusted = ntwd_get_inflation_adjusted(),
-     regional = ntwd_get_generic("all_prop"),
-     seasonal_regional = ntwd_get_seasonal_regional(),
-     not_new_prop = ntwd_get_not_new_prop(),
-     aftb_ind = ntwd_get_aftb_ind(),
-     aftb_hper = ntwd_get_aftb_hper(),
-     ntwd_get_generic(id)
+     monthly = ntwd_get_monthly(.access_info = .verbose),
+     quarterly = ntwd_get_quarterly(.access_info = .verbose),
+     since_1952 = ntwd_get_since_1952(.access_info = .verbose),
+     inflation_adjusted = ntwd_get_inflation_adjusted(.access_info = .verbose),
+     regional = ntwd_get_generic("all_prop", .access_info = .verbose),
+     seasonal_regional = ntwd_get_seasonal_regional(.access_info = .verbose),
+     not_new_prop = ntwd_get_not_new_prop(.access_info = .verbose),
+     aftb_ind = ntwd_get_aftb_ind(.access_info = .verbose),
+     aftb_hper = ntwd_get_aftb_hper(.access_info = .verbose),
+     ntwd_get_generic(id, .access_info = .verbose)
   )
 }
 
@@ -40,6 +40,8 @@ ntwd_get_id <- function(id) {
 #'
 #' @details Not all objects contain metadata
 #'
+#' @return A chracter vector.
+#'
 #' @export
 #'
 #' @examples
@@ -49,7 +51,7 @@ ntwd_get_id <- function(id) {
 #' }
 ntwd_meta <- function(x) {
   attr(x, "metadata") %||%
-    message("the objects does not contain metadata")
+    message("the object does not contain metadata")
 }
 
 
@@ -61,7 +63,10 @@ ntwd_meta <- function(x) {
 #' For more information the user can browse the source webpage through
 #' \code{\link{ntwd_browse}}.
 #'
-#' @param id which dataset `id`to fetch.
+#' @param id which `id`to fetch. See `?ntwd_dataset` for a full list.
+#' @param verbose whether to print the url of the data.
+#'
+#' @return Returns a tibble.
 #'
 #' @export
 #'
@@ -74,7 +79,7 @@ ntwd_meta <- function(x) {
 #' # For a list of datasets
 #' ?ntwd_datasets
 #' }
-ntwd_get <- function(id) {
-  ntwd_get_id(id)
+ntwd_get <- function(id, verbose = TRUE) {
+  ntwd_get_id(id, .verbose = verbose)
 }
 

@@ -16,6 +16,12 @@ read_excel_silently_ <- function(...) {
   })
 }
 
+
+set_source <- function(tbl, url) {
+  attr(tbl, "source") <- attr(url, "source")
+  tbl
+}
+
 # get ---------------------------------------------------------------------
 
 
@@ -25,9 +31,9 @@ read_excel_silently_ <- function(...) {
 #' @importFrom tidyr gather separate
 #' @importFrom magrittr set_names
 #' @importFrom lubridate is.Date yq
-ntwd_get_generic <- function(id) {
+ntwd_get_generic <- function(id, .access_info) {
   num <- grep(gsub("_", "-", id), ntwd_tf(NULL))
-  xfile <- ntwd_tf(num[1])
+  xfile <- ntwd_tf(num[1], access_info = .access_info)
   on.exit(file.remove(xfile))
   x <- read_excel_silently(xfile, skip = 0, n_max = 3, col_names = FALSE)
   x[1,] <- zoo::na.locf(unlist(x[1,])) %>% char_na()
@@ -41,33 +47,36 @@ ntwd_get_generic <- function(id) {
     clean_date_qy() %>%
     set_names(c("Date", nms[-1])) %>%
     mutate_if(Negate(lubridate::is.Date), as.double) %>%
-    gather(key, value, -Date) %>%
-    separate(key, into = c("region", "type"),  sep = "[^[:alnum:]]:") %>%
+    gather(type, value, -Date) %>%
+    separate(type, into = c("region", "type"),  sep = "[^[:alnum:]]:") %>%
     # mutate(type = recode(type, "\u00A3" = "Price", "INDEX" = "Index")) %>%
-    mutate(region = stringr::str_to_title(region))
+    mutate(region = stringr::str_to_title(region)) %>%
+    set_source(xfile)
 }
 
-ntwd_get_monthly <- function() {
-  xfile <- ntwd_tf(1)
+ntwd_get_monthly <- function(.access_info) {
+  xfile <- ntwd_tf(1, access_info = .access_info)
   on.exit(file.remove(xfile))
   xfile %>%
     read_excel_silently(.) %>%
     clean_date() %>%
-    gather(key, value, -Date)
+    gather(type, value, -Date) %>%
+    set_source(xfile)
 }
 
-ntwd_get_quarterly <- function() {
-  xfile <- ntwd_tf(2)
+ntwd_get_quarterly <- function(.access_info) {
+  xfile <- ntwd_tf(2, access_info = .access_info)
   on.exit(file.remove(xfile))
   xfile %>%
     read_excel_silently(.) %>%
     clean_date_qy() %>%
     dplyr::rename_all(~ gsub(":", "", .)) %>%
-    gather(key, value, -Date)
+    gather(type, value, -Date) %>%
+    set_source(xfile)
 }
 
-ntwd_get_since_1952 <- function() {
-  xfile <- ntwd_tf(3)
+ntwd_get_since_1952 <- function(.access_info) {
+  xfile <- ntwd_tf(3, access_info = .access_info)
   on.exit(file.remove(xfile))
   x <- read_excel_silently(xfile, skip = 3, n_max = 3, col_names = FALSE)
   x[1,] <- c("", zoo::na.locf(unlist(x[1,])))
@@ -89,49 +98,56 @@ ntwd_get_since_1952 <- function() {
     clean_date_qy() %>%
     set_names(nms) %>%
     mutate_if(Negate(lubridate::is.Date), as.double) %>%
-    gather(key, value, -Date) %>%
-    tidyr::separate(key, into = c("key", "type"), sep = "[^[:alnum:]]:") %>%
+    gather(type, value, -Date) %>%
+    tidyr::separate(type, into = c("house_type", "type"), sep = "[^[:alnum:]]:") %>%
     mutate(type = trimws(type)) %>%
-    set_metadata(metadata = index_year)
+    set_metadata(metadata = index_year) %>%
+    set_source(xfile)
 }
 
-ntwd_get_inflation_adjusted <- function() {
-  xfile <- ntwd_tf(4)
+ntwd_get_inflation_adjusted <- function(.access_info) {
+  xfile <- ntwd_tf(4, access_info = .access_info)
   on.exit(file.remove(xfile))
   skip_after <- read_excel_silently(xfile) %>% trunc_na() %>% nrow()
   read_excel_silently(xfile, n_max = skip_after) %>%
     clean_date_yq() %>%
     rename_all(list(~ gsub("\\s*\\([^\\)]+\\)","",.))) %>%
-    gather(key, value, -Date)
+    gather(type, value, -Date) %>%
+    set_source(xfile)
 }
 
-ntwd_get_seasonal_regional <- function() {
-  xfile <- ntwd_tf(6)
+#' @importFrom dplyr recode
+ntwd_get_seasonal_regional <- function(.access_info) {
+  xfile <- ntwd_tf(6, access_info = .access_info)
   on.exit(file.remove(xfile))
   x <- read_excel_silently(xfile, skip = 0, n_max = 3, col_names = FALSE)
   x <- x[-2,]
   x[1,] <- c(NA, zoo::na.locf(unlist(x[1,]))) %>% char_na()
   nms <- transmute_all(x, paste, collapse = " ") %>%
-    slice(2) %>%  unlist(use.names = FALSE) %>%
+    slice(2) %>%
+    unlist(use.names = FALSE) %>%
     gsub("^: ", "", .) %>%
     gsub("Seasonally Adjusted Index", "Index :", .) %>%
     gsub("Quarter on Quarter Change - Seasonally Adjusted", "QoQ Change :", .) %>%
     trimws()
-  index_year <- nms[1]
+  # index_year <- nms[1]
   nms[1] <- "Date"
 
   read_excel_silently(xfile, skip = 3, col_names = FALSE) %>%
+    select(-ncol(.)) %>%
     clean_date_qy() %>%
     set_names(nms) %>%
-    gather(key, value, -Date) %>%
-    tidyr::separate(key, into = c("type", "region"), sep = "[^[:alnum:]]:") %>%
+    gather(type, value, -Date) %>%
+    tidyr::separate(type, into = c("type", "region"), sep = "[^[:alnum:]]:") %>%
     mutate(region = trimws(region)) %>%
-    mutate(region = stringr::str_to_title(region)) %>%
-    select(Date, region, type, value)
+    mutate(region = stringr::str_to_title(region),
+           region = recode(region, "Uk" = "UK")) %>%
+    select(Date, region, type, value) %>%
+    set_source(xfile)
 }
 
-ntwd_get_not_new_prop <- function() {
-  xfile <- ntwd_tf(10)
+ntwd_get_not_new_prop <- function(.access_info) {
+  xfile <- ntwd_tf(10, access_info = .access_info)
   on.exit(file.remove(xfile))
   nms <- c("Date", "UK Not new") #(\u00A3)
   read_excel_silently(
@@ -140,11 +156,12 @@ ntwd_get_not_new_prop <- function() {
     clean_date_qy() %>%
     set_names(nms) %>%
     mutate_if(Negate(lubridate::is.Date), as.double) %>%
-    tidyr::drop_na()
+    tidyr::drop_na() %>%
+    set_source(xfile)
 }
 
-ntwd_get_aftb_ind <- function() {
-  xfile <- ntwd_tf(17)
+ntwd_get_aftb_ind <- function(.access_info) {
+  xfile <- ntwd_tf(17, access_info = .access_info)
   on.exit(file.remove(xfile))
   percent <- read_excel_silently(xfile, skip = 3) %>%
     clean_date_yq() %>%
@@ -155,14 +172,16 @@ ntwd_get_aftb_ind <- function() {
     mutate(type = "index") %>%
     gather(region, value, -Date, -type)
   full_join(percent, index, by = c("Date", "type", "region", "value")) %>%
-    select(Date, region, type, value)
+    select(Date, region, type, value) %>%
+    set_source(xfile)
 }
 
-ntwd_get_aftb_hper <- function() {
-  xfile <- ntwd_tf(18)
+ntwd_get_aftb_hper <- function(.access_info) {
+  xfile <- ntwd_tf(18, access_info = .access_info)
   on.exit(file.remove(xfile))
   xfile %>%
     read_excel_silently(.) %>%
     clean_date_yq() %>%
-    gather(region, value, -Date, factor_key = TRUE)
+    gather(region, value, -Date, factor_key = TRUE) %>%
+    set_source(xfile)
 }
