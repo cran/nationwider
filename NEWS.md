@@ -1,3 +1,19 @@
+# nationwider 1.1.1
+
+## New Features
+
+* `ntwd_get` now prints the url of the sourced excel file. Option can be
+skipped if `verbose` argument is set to `FALSE`.
+
+## Bug Fixes
+
+* Adjusted functions to gracefully fail (all errors are demoted to messages) if:
+  - There is no internet
+  - http error status
+  - Timeout error
+  
+* Fixed row subassignment after tibble 1.0.0. update.
+
 # nationwider 1.1.0
 
 * Added a `NEWS.md` file to track changes to the package.

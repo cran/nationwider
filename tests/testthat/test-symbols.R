@@ -1,15 +1,18 @@
-context("functionality")
+context("get")
 
-ids <- c(
-  "monthly", "quarterly", "since_1952", "inflation_adjusted",
-  "regional", "seasonal_regional",
-  "new_prop", "mod_prop", "old_prop", "not_new_prop",
-  "first", "fowner",
-  "terraced", "flats", "semi_det","detached",
-  "aftb_ind", "aftb_hper"
-)
+test_that("id error messages", {
+  expect_error(ntwd_get("wrong_id")) # probably backtickes or ? throws of an error about the msg
+  expect_error(ntwd_get()) # same here
+  expect_error(
+    ntwd_get(c("monthly", "quarterly")),
+    "trying to access multiple files"
+  )
+})
 
 test_that("id works", {
+  skip_if_offline()
+  skip_if_http_error()
+
   expect_error(ntwd_get("monthly"), NA)
   expect_error(ntwd_get("quarterly"), NA)
   expect_error(ntwd_get("since_1952"), NA)

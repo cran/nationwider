@@ -10,7 +10,7 @@ ntwd_meta(x)
 \item{x}{The object that is returned from \code{\link{ntwd_get}}.}
 }
 \value{
-A chracter vector.
+A character vector.
 }
 \description{
 Some datasets in nationwide contain metadata that cannot be displayed in

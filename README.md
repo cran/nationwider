@@ -41,7 +41,7 @@ library(nationwider)
 
 np <- nationwider::ntwd_get("new_prop")
 np
-#> # A tibble: 5,124 x 4
+#> # A tibble: 5,180 x 4
 #>    Date       region type   value
 #>    <date>     <chr>  <chr>  <dbl>
 #>  1 1973-10-01 North  Price 13528.
@@ -54,7 +54,7 @@ np
 #>  8 1975-07-01 North  Price 16084.
 #>  9 1975-10-01 North  Price 17569.
 #> 10 1976-01-01 North  Price 18096.
-#> # ... with 5,114 more rows
+#> # ... with 5,170 more rows
 ```
 
 We reshape our data from the initial form into a wider form.
@@ -74,7 +74,7 @@ library(tidyr)
 np %>% 
   dplyr::filter(type == "Price") %>% 
   spread(region,value)
-#> # A tibble: 183 x 16
+#> # A tibble: 185 x 16
 #>    Date       type  `East Anglia` `East Mids` London `N Ireland`  North
 #>    <date>     <chr>         <dbl>       <dbl>  <dbl>       <dbl>  <dbl>
 #>  1 1973-10-01 Price         9375.       8860. 11780.      13598. 13528.
@@ -87,7 +87,7 @@ np %>%
 #>  8 1975-07-01 Price         9907.       9617. 12843.      20578. 16084.
 #>  9 1975-10-01 Price        10393.       9762. 13273.      22622. 17569.
 #> 10 1976-01-01 Price        10438.       9985. 13187.      23761. 18096.
-#> # ... with 173 more rows, and 9 more variables: `North West` <dbl>, `Outer
+#> # ... with 175 more rows, and 9 more variables: `North West` <dbl>, `Outer
 #> #   Met` <dbl>, `Outer S East` <dbl>, Scotland <dbl>, `South West` <dbl>,
 #> #   Uk <dbl>, Wales <dbl>, `West Mids` <dbl>, `Yorks & Hside` <dbl>
 ```
